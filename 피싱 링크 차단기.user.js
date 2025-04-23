@@ -11,6 +11,7 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_notification
+// @license      MIT
 // ==/UserScript==
 
 (async function () {
