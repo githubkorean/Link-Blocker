@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         피싱 링크 차단기
 // @namespace    http://tampermonkey.net/
-// @version      0.2
+// @version      0.1
 // @description  @ 포함된 http/https 링크 중 피싱 목적 링크만 [Blocked URL]로 대체
 // @icon         https://raw.githubusercontent.com/githubkorean/Link-Blocker/refs/heads/main/icon.png
 // @author       mickey90427@naver.com
