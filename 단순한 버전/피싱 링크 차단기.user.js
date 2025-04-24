@@ -7,6 +7,7 @@
 // @author       mickey90427@naver.com
 // @match        *://*/*
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 
 (function () {
