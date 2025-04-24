@@ -19,37 +19,36 @@
 
     const STORAGE_KEY = 'phishingBlockedHosts';
 
-    // 저장된 차단된 호스트 목록 가져오기
     const getBlockedHosts = async () => {
         const stored = await GM_getValue(STORAGE_KEY, '[]');
         return JSON.parse(stored);
     };
 
-    // 차단된 호스트 목록에 추가
     const addBlockedHost = async host => {
         const list = await getBlockedHosts();
         if (!list.includes(host)) {
             list.push(host);
             await GM_setValue(STORAGE_KEY, JSON.stringify(list));
-            updateLinks(); // 차단이 적용되자마자 바로 링크 업데이트
+            updateLinks();
         }
     };
 
-    // 모든 링크를 검사하고, 차단된 도메인 처리
     const updateLinks = async () => {
         const links = document.querySelectorAll('a[href]');
         const blockedHosts = await getBlockedHosts();
 
         links.forEach(link => {
             const href = link.getAttribute('href');
-            if (!href.includes('@')) return;
+            if (!href) return;
+            if (!href.startsWith('http')) return;
 
             try {
-                const actualHost = href.split('@').pop().split('/')[0];
-                const userinfo = new URL(href, window.location.href).username;
-                const isSuspect = userinfo || href.match(/https?:\/\/[^\/]+@/);
+                const url = new URL(href, window.location.href);
+                const userinfoExists = url.username !== '';
 
-                if (isSuspect) {
+                if (userinfoExists) {
+                    const actualHost = url.hostname;
+
                     if (blockedHosts.includes(actualHost)) {
                         const replacement = document.createElement('span');
                         replacement.textContent = '[차단된 URL]';
@@ -60,19 +59,19 @@
 
                     link.style.backgroundColor = '#fff3cd';
                     link.style.border = '1px solid #ffa500';
-                    link.title = '⚠️ 의심 링크 - 클릭 시 확인 요청됨';
+                    link.title = `⚠️ 피싱 의심 링크: ${actualHost}`;
 
                     link.addEventListener('click', async function (e) {
                         e.preventDefault();
 
                         const confirmed = confirm(
-                            `⚠️ 해당 사이트는 피싱 사이트 일 수 있습니다. 이동하시겠습니까?\n\n실제 연결 도메인: ${actualHost}`
+                            `⚠️ 해당 사이트는 피싱 사이트일 수 있습니다.\n\n실제 연결 도메인: ${actualHost}\n\n계속하시겠습니까?`
                         );
 
                         if (confirmed) {
                             window.location.href = href;
                         } else {
-                            const block = confirm(`도메인 ${actualHost}를 차단 목록에 추가하시겠습니까?`);
+                            const block = confirm(`${actualHost} 도메인을 차단 목록에 추가할까요?`);
                             if (block) {
                                 await addBlockedHost(actualHost);
                                 alert(`✅ 차단됨: ${actualHost}`);
@@ -81,7 +80,7 @@
                     });
                 }
             } catch (err) {
-                // Invalid URL
+                // 유효하지 않은 URL이면 무시
             }
         });
     };
@@ -129,33 +128,25 @@
         if (e.shiftKey && e.altKey && e.key === 'P') {
             const action = prompt("세이브(1), 로드(2), 초기화(3)를 선택하세요: ");
             if (action === '1') {
-                // 세이브
                 await saveBlockedHosts();
             } else if (action === '2') {
-                // 로드
                 const input = document.createElement('input');
                 input.type = 'file';
                 input.accept = '.json';
                 input.onchange = (e) => {
                     const file = e.target.files[0];
-                    if (file) {
-                        loadBlockedHosts(file);
-                    }
+                    if (file) loadBlockedHosts(file);
                 };
                 input.click();
             } else if (action === '3') {
-                // 초기화
                 const confirmReset = confirm("차단된 도메인 목록을 초기화하시겠습니까?");
-                if (confirmReset) {
-                    await resetBlockedHosts();
-                }
+                if (confirmReset) await resetBlockedHosts();
             } else {
                 alert("잘못된 입력입니다.");
             }
         }
     });
 
-    // 초기 링크 처리
     updateLinks();
 
 })();
